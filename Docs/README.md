@@ -1,7 +1,8 @@
 ## NetworkAudit System
 
 ## Overview
-NetworkAudit is a modular PowerShell-based system for secure, automated network auditing in Windows environments. It scans active TCP connections, flags untrusted IPs, logs results, and sends alert emails using encrypted credentials. It also supports scheduled task registration, log retention enforcement, and secure credential management.
+NetworkAudit -  <!-- --> if you want to test without losing it
+is a modular PowerShell-based system for secure, automated network auditing in Windows environments. It scans active TCP connections, flags untrusted IPs, logs results, and sends alert emails using encrypted credentials. It also supports scheduled task registration, log retention enforcement, and secure credential management.
 
 This system is designed for compliance-driven IT operations, proactive monitoring, and scalable deployment.
 
