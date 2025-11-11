@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <!-- General task metadata -->
+  <RegistrationInfo>
+    <Date>2025-11-10T01:00:00</Date>
+    <Author>Kevin Crosson</Author>
+    <Description>Automated network audit using Run-NetworkAudit.ps1</Description>
+  </RegistrationInfo>
+
+  <!-- Run with highest privileges -->
+  <Principals>
+    <Principal id="Author">
+      <UserId>S-1-5-18</UserId> <!-- SYSTEM account SID -->
+      <RunLevel>HighestAvailable</RunLevel>
+    </Principal>
+  </Principals>
+
+  <!-- Task settings -->
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <ExecutionTimeLimit>PT10M</ExecutionTimeLimit> <!-- 10-minute timeout -->
+    <Priority>7</Priority>
+  </Settings>
+
+  <!-- Trigger: daily at 2:00 AM -->
+  <Triggers>
+    <CalendarTrigger>
+      <StartBoundary>2025-11-10T02:00:00</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByDay>
+        <DaysInterval>1</DaysInterval>
+      </ScheduleByDay>
+    </CalendarTrigger>
+  </Triggers>
+
+  <!-- Action: run PowerShell with execution policy bypass -->
+  <Actions Context="Author">
+    <Exec>
+      <Command>powershell.exe</Command>
+      <Arguments>-ExecutionPolicy Bypass -File "C:\.PS\NetworkAudit\Run-NetworkAudit.ps1"</Arguments>
+    </Exec>
+  </Actions>
+</Task>
