@@ -1,4 +1,4 @@
-﻿# Module Documentation
+# Module Documentation
 
 This folder contains scripts or documentation for a specific module. Please update this README with module-specific details.
 

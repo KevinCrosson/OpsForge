@@ -1,0 +1,26 @@
+name: Hook Validation
+
+on:
+  push:
+    paths:
+      - '.github/hooks/**'
+
+jobs:
+  validate-hooks:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compare pre-commit hook
+        shell: pwsh
+        run: |
+          $source = Get-Content .github/hooks/pre-commit -Raw
+          $target = Get-Content .git/hooks/pre-commit -Raw
+          if ($source -ne $target) {
+            Write-Error "pre-commit hook mismatch between .github/hooks and .git/hooks"
+            exit 1
+          } else {
+            Write-Host "pre-commit hook is correctly installed"
+          }

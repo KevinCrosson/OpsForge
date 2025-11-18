@@ -1,0 +1,67 @@
+<#
+.SYNOPSIS
+Bundles release assets into a ZIP archive or folder for distribution.
+
+.DESCRIPTION
+Collects README.md, VERSION.txt, CHANGELOG.md, and any additional files.
+Supports dry-run mode, logging, and optional inclusion of extra assets.
+
+.PARAMETER DryRun
+If specified, simulates bundling without writing output.
+
+.PARAMETER LogPath
+Custom path for log output. Defaults to Logs/CI/Release/Bundle/.
+
+.PARAMETER Include
+Optional array of additional file paths to include in the bundle.
+
+.EXAMPLE
+.\Bundle-ReleaseArtifacts.ps1 -DryRun -Include @("Docs/LICENSE.txt")
+#>
+
+param (
+    [switch]$DryRun,
+    [string]$LogPath = "Logs/CI/Release/Bundle/",
+    [string[]]$Include = @()
+)
+
+# Ensure log folder exists
+if (-not $DryRun) {
+    New-Item -ItemType Directory -Force -Path $LogPath | Out-Null
+}
+
+# Define core assets
+$CoreFiles = @("README.md", "VERSION.txt", "CHANGELOG.md")
+$AllFiles = $CoreFiles + $Include
+
+# Validate existence
+$Missing = $AllFiles | Where-Object { -not (Test-Path $_) }
+if ($Missing.Count -gt 0) {
+    Write-Warning "Missing files: $($Missing -join ', ')"
+    if (-not $DryRun) {
+        "$($Missing -join ', ')" | Out-File "$LogPath\MissingFiles.log"
+    }
+}
+
+# Bundle name
+$Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$BundleName = "ReleaseBundle-$Timestamp"
+$BundlePath = "$LogPath\$BundleName"
+
+# Create bundle
+if (-not $DryRun) {
+    New-Item -ItemType Directory -Force -Path $BundlePath | Out-Null
+    foreach ($File in $AllFiles) {
+        if (Test-Path $File) {
+            Copy-Item $File -Destination $BundlePath -Force
+        }
+    }
+
+    # Optional: create ZIP
+    $ZipPath = "$LogPath\$BundleName.zip"
+    Compress-Archive -Path "$BundlePath\*" -DestinationPath $ZipPath -Force
+    "Bundle created at $ZipPath" | Out-File "$LogPath\Bundle.log"
+} else {
+    Write-Host "[DryRun] Would bundle: $($AllFiles -join ', ')"
+    "[DryRun] Bundle would be created at $BundlePath.zip" | Out-File "$LogPath\DryRun.log"
+}

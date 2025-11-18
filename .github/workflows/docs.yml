@@ -1,0 +1,81 @@
+name: Docs Pipeline
+
+# Trigger this workflow on:
+on:
+  push:
+    # Only run when documentation-related files change
+    paths:
+      - 'Docs/**'
+      - 'Modules/DevTasks/Operational/Functions/**'
+      - 'Dispatch-Docs.ps1'
+      - 'VERSION.txt'
+      - 'CHANGELOG.md'
+      - 'README.md'
+  workflow_dispatch:  # Allow manual triggering from GitHub UI
+
+jobs:
+  docs:
+    name: Documentation CI
+    runs-on: windows-latest  # Use Windows runner for PowerShell compatibility
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup PowerShell Core
+      - name: Setup PowerShell
+        uses: actions/setup-powershell@v2
+
+      # Step 3: Run the documentation dispatcher
+      - name: Run Dispatch-Docs.ps1
+        shell: pwsh
+        run: |
+          ./Dispatch-Docs.ps1
+
+      # Step 4: Lint all Markdown files for formatting issues
+      - name: Lint Markdown files
+        shell: pwsh
+        run: |
+          ./Modules/DevTasks/Operational/Functions/Lint-Markdown.ps1
+
+      # Step 5: Bundle README.md from metadata, folder tree, and changelog
+      - name: Bundle README artifacts
+        shell: pwsh
+        run: |
+          ./Modules/DevTasks/Operational/Functions/Bundle-Readme.ps1
+
+      # Step 6: Tag the current commit with the version from VERSION.txt
+      - name: Tag version from VERSION.txt
+        shell: pwsh
+        run: |
+          ./Modules/DevTasks/Operational/Functions/Tag-Version.ps1
+
+      # Step 7: Export metadata files to Releases/ for packaging
+      - name: Export metadata files
+        shell: pwsh
+        run: |
+          ./Modules/DevTasks/Operational/Functions/Export-MetadataFiles.ps1
+
+      # Step 8: Verify changelog entry matches current version
+      - name: Verify changelog entry
+        shell: pwsh
+        run: |
+          ./Modules/DevTasks/Operational/Functions/Verify-ChangelogEntry.ps1
+
+      # Step 9: Inject CI and contributor badges into README.md
+      - name: Inject badges
+        shell: pwsh
+        run: |
+          ./Modules/DevTasks/Operational/Functions/Inject-CIBadge.ps1
+          ./Modules/DevTasks/Operational/Functions/Inject-ContributorBadge.ps1
+
+      # Step 10: Commit updated docs and push (optional)
+      - name: Commit updated docs
+        if: success()
+        run: |
+          git config user.name "CI Bot"
+          git config user.email "ci@networkaudit.local"
+          git add Docs/FolderTree.md CHANGELOG.md README.md VERSION.txt Releases/*
+          git commit -m "docs: update folder tree, changelog, and README"
+          git push

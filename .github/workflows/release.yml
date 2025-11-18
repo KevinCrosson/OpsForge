@@ -1,0 +1,47 @@
+name: Release CI
+
+on:
+  workflow_dispatch:  # Manual trigger from GitHub UI
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version tag
+        id: version
+        shell: pwsh
+        run: |
+          $version = Get-Content VERSION.txt | Select-Object -First 1
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Bundle release artifacts
+        shell: pwsh
+        run: |
+          $bundlePath = "ReleaseArtifacts"
+          New-Item -ItemType Directory -Force -Path $bundlePath | Out-Null
+          Copy-Item README.md -Destination "$bundlePath/README.md"
+          Copy-Item VERSION.txt -Destination "$bundlePath/VERSION.txt"
+          Copy-Item CHANGELOG.md -Destination "$bundlePath/CHANGELOG.md"
+          Compress-Archive -Path "$bundlePath/*" -DestinationPath "$bundlePath/NetworkAudit-$env:VERSION.zip"
+
+      - name: Extract changelog notes
+        id: changelog
+        shell: pwsh
+        run: |
+          $version = $env:VERSION
+          $notes = Get-Content CHANGELOG.md | Select-String -Pattern "## \[$version\]" -Context 0,10
+          $text = $notes | ForEach-Object { $_.Line }
+          $joined = $text -join "`n"
+          echo "RELEASE_NOTES=$joined" >> $env:GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: "NetworkAudit v${{ env.VERSION }}"
+          body: ${{ env.RELEASE_NOTES }}
+          files: ReleaseArtifacts/NetworkAudit-${{ env.VERSION }}.zip
