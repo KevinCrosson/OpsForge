@@ -1,0 +1,82 @@
+# ------------------------------------------------------------
+# Workflow: Update Status Dashboard
+# Purpose:
+#   - Automatically regenerate the OpsForge Status Dashboard chart
+#   - Validate Docs/status.json for correctness
+#   - Commit the updated chart back to the repository
+# ------------------------------------------------------------
+
+name: Update Status Dashboard
+
+# ------------------------------------------------------------
+# Trigger conditions:
+#   - Runs automatically when Docs/status.json changes (progress data).
+#   - Can also be triggered manually from the GitHub Actions tab.
+# ------------------------------------------------------------
+on:
+  push:
+    paths:
+      - 'Docs/status.json'
+  workflow_dispatch:
+
+jobs:
+  build:
+    # --------------------------------------------------------
+    # Use the latest Ubuntu runner for consistency.
+    # --------------------------------------------------------
+    runs-on: ubuntu-latest
+
+    steps:
+      # --------------------------------------------------------
+      # Step 1: Checkout the repository so workflow has access
+      # to scripts, Docs folder, and status.json.
+      # --------------------------------------------------------
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      # --------------------------------------------------------
+      # Step 2: Set up Python environment.
+      # Use Python 3.x to ensure compatibility with matplotlib.
+      # --------------------------------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      # --------------------------------------------------------
+      # Step 3: Install dependencies.
+      # Requirements are listed in requirements.txt for consistency.
+      # --------------------------------------------------------
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # --------------------------------------------------------
+      # Step 4: Validate status.json before generating chart.
+      # This ensures contributors cannot break the dashboard
+      # by pushing malformed or invalid JSON.
+      # --------------------------------------------------------
+      - name: Validate Status JSON
+        run: python Scripts/Metadata/validate_status_json.py
+
+      # --------------------------------------------------------
+      # Step 5: Generate Status Dashboard chart.
+      # This runs your Python script that reads Docs/status.json
+      # and outputs Docs/OpsForge_Status_Dashboard_Overlay.png.
+      # --------------------------------------------------------
+      - name: Generate Status Dashboard
+        run: python Scripts/Metadata/generate_status_chart.py
+
+      # --------------------------------------------------------
+      # Step 6: Commit updated chart back to the repo.
+      # Ensures contributors always see the latest chart in README.md,
+      # STATUS.md, and STATUS-DASHBOARD.md.
+      # --------------------------------------------------------
+      - name: Commit Updated Chart
+        run: |
+          git config --global user.name "OpsForge Bot"
+          git config --global user.email "kevin.crosson@outlook.com"
+          git add Docs/OpsForge_Status_Dashboard_Overlay.png
+          git commit -m "Update Status Dashboard chart"
+          git push

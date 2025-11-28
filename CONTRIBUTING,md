@@ -1,0 +1,84 @@
+# Contributing to OpsForge
+
+Welcome to OpsForge!  
+This guide explains how to contribute safely and consistently, with a focus on documentation hygiene and CI/CD enforcement.
+
+---
+
+## 📋 Contribution Workflow
+
+1. **Fork the repository** and create a feature branch:
+   ```bash
+    git checkout -b feature/my-change
+
+2. Make your changes:
+
+    - Update code, scripts, or documentation.
+    - Ensure governance docs (LICENSE, NOTICE, COMPLIANCE) follow stricter rules.           
+    
+3. Run local lint checks before committing:
+
+    # Install markdownlint-cli2 globally
+    npm install -g markdownlint-cli2
+
+    # Run baseline linting for contributor docs
+    markdownlint-cli2 "**/*.md" "#node_modules" "#.git" -c .markdownlint.json
+
+    # Run stricter linting for governance docs
+    markdownlint-cli2 "LICENSE.md" "NOTICE.md" "Docs/COMPLIANCE.md" -c opsforge-lint.json
+
+4. Fix any errors reported by linting.
+
+    See [Looks like the result wasn't safe to show. Let's switch things up and try something else!] for examples of common errors and fixes.
+
+5. Commit your changes:
+    
+    git commit -m "Update documentation and fix lint issues"
+
+6. Push your branch and open a Pull Request:
+
+    git push origin feature/my-change
+
+
+## 📖 Resources
+
+- [Looks like the result wasn't safe to show. Let's switch things up and try something else!] → Sample error report and fixes.
+
+- [Looks like the result wasn't safe to show. Let's switch things up and try something else!] → Project overview.
+
+- [Looks like the result wasn't safe to show. Let's switch things up and try something else!] → Current progress and milestones.
+
+- [Looks like the result wasn't safe to show. Let's switch things up and try something else!] → Future plans.
+
+
+## ✅ Contributor Checklist
+
+- [ ] Run lint checks locally before committing.
+
+- [ ] Fix all errors reported by markdownlint.
+
+- [ ] Ensure governance docs follow stricter rules.
+
+- [ ] Confirm CI/CD passes before requesting merge.
+
+---
+
+## 🔍 Why This Matters
+
+- Keeps **documentation clean and consistent** across the repo.  
+
+- Prevents **merge blockers** by catching errors early.  
+
+- Empowers contributors with **clear onboarding steps**.  
+
+---
+
+## ✅ With this `CONTRIBUTING.md`, new contributors will know exactly how to lint, fix, and commit changes without breaking CI/CD.  
+
+
+
+
+
+
+
+- 

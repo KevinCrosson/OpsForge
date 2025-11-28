@@ -1,0 +1,25 @@
+# --- Core Framework ---
+Flask>=2.3
+
+# --- Database ORM ---
+Flask-SQLAlchemy>=3.1
+psycopg2-binary>=2.9  # PostgreSQL driver
+
+# --- Migrations ---
+Flask-Migrate>=4.0
+
+# --- CORS Support ---
+Flask-Cors>=4.0
+
+# --- Environment Variable Management ---
+python-dotenv>=1.0
+
+# --- Authentication ---
+flask-jwt-extended>=4.6  # JWT-based auth
+
+# --- PDF Generation ---
+reportlab>=4.0  # For generating project summary PDFs
+
+# --- API Documentation ---
+flask-restx>=1.2  # Swagger/OpenAPI support
+

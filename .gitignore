@@ -1,0 +1,53 @@
+# =========================
+# OpsForge .gitignore
+# =========================
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+
+# --- Virtual Environments ---
+venv/
+.venv/
+env/
+
+# --- Flask-Migrate ---
+BuildMate/backend/migrations/
+
+# --- Environment Files ---
+BuildMate/backend/.env
+BuildMate/backend/.envexample
+
+# --- Logs & Runtime Outputs ---
+logs/
+*.log
+
+# --- Backups & Temp Files ---
+backup/
+*.bak
+*.tmp
+*.swp
+
+# --- Credentials & Secrets ---
+BuildMate/credentials.json   # ⚠️ Sensitive, excluded
+*.key
+*.pem
+*.crt
+
+# --- IDEs ---
+.vscode/
+.idea/
+
+# --- OS/System Files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- OpsForge Specific ---
+Docs/status.json
+Docs/status-chart.png

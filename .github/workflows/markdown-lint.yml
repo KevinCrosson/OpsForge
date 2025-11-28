@@ -1,0 +1,75 @@
+# ------------------------------------------------------------
+# Workflow: Markdown Lint
+# Purpose:
+#   - Enforce consistent formatting across all Markdown files
+#   - Apply stricter rules to governance docs (LICENSE, NOTICE, COMPLIANCE)
+# ------------------------------------------------------------
+
+name: Markdown Lint
+
+# ------------------------------------------------------------
+# Trigger conditions:
+#   - Runs on every push and pull request affecting Markdown files
+#   - Can also be triggered manually from the GitHub Actions tab
+# ------------------------------------------------------------
+on:
+  push:
+    paths:
+      - '**/*.md'
+  pull_request:
+    paths:
+      - '**/*.md'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    # --------------------------------------------------------
+    # Use the latest Ubuntu runner for consistency
+    # --------------------------------------------------------
+    runs-on: ubuntu-latest
+
+    steps:
+      # --------------------------------------------------------
+      # Step 1: Checkout the repository so workflow has access
+      # to all Markdown files and lint configs
+      # --------------------------------------------------------
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      # --------------------------------------------------------
+      # Step 2: Set up Node.js environment
+      # markdownlint-cli2 is a Node.js package
+      # --------------------------------------------------------
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # --------------------------------------------------------
+      # Step 3: Install markdownlint-cli2 globally
+      # This tool enforces Markdown formatting rules
+      # --------------------------------------------------------
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2
+
+      # --------------------------------------------------------
+      # Step 4: Run baseline linting across all Markdown files
+      # Uses .markdownlint.json config for contributor docs
+      # --------------------------------------------------------
+      - name: Lint Contributor Docs
+        run: markdownlint-cli2 "**/*.md" "#node_modules" "#.git" -c .markdownlint.json
+
+      # --------------------------------------------------------
+      # Step 5: Run stricter linting on governance docs only
+      # Uses opsforge-lint.json config for LICENSE, NOTICE, COMPLIANCE
+      # --------------------------------------------------------
+      - name: Lint Governance Docs
+        run: markdownlint-cli2 "LICENSE.md" "NOTICE.md" "Docs/COMPLIANCE.md" -c opsforge-lint.json
+
+      # --------------------------------------------------------
+      # Step 6: Report results
+      # If any lint errors are found, the workflow fails
+      # --------------------------------------------------------
+      - name: Report Results
+        if: failure()
+        run: echo "❌ Markdown linting failed. Please fix formatting issues before merging."
