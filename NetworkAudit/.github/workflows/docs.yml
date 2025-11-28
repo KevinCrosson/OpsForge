@@ -1,0 +1,100 @@
+# ------------------------------------------------------------
+# Workflow Name
+# ------------------------------------------------------------
+# This is the name that will appear in GitHub Actions UI.
+name: Documentation Hygiene
+
+# ------------------------------------------------------------
+# Trigger Conditions
+# ------------------------------------------------------------
+# Defines when this workflow should run.
+on:
+  push:                # Run on every push to the repo
+    branches: [ main ] # Limit to pushes on the main branch
+  pull_request:        # Run on every pull request targeting main
+    branches: [ main ]
+
+# ------------------------------------------------------------
+# Jobs Section
+# ------------------------------------------------------------
+jobs:
+  docs-validation:     # Job name (appears in GitHub Actions UI)
+    runs-on: windows-latest   # ⚠️ Use Windows runner for PowerShell scripts
+
+    steps:
+      # --------------------------------------------------------
+      # Step 1: Checkout repository
+      # --------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        # This pulls down your repo code so the workflow can access docs.
+
+      # --------------------------------------------------------
+      # Step 2: Run documentation bundler (PowerShell)
+      # --------------------------------------------------------
+      - name: Run documentation bundler
+        shell: pwsh
+        run: Scripts/Dispatchers/Bundle-Docs.ps1
+        # Executes your dispatcher script to regenerate README.md,
+        # update CHANGELOG.md, bump VERSION, and copy LICENSE.
+
+      # --------------------------------------------------------
+      # Step 3: Setup Node.js (for markdown linting tools)
+      # --------------------------------------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+        # Node.js is required for markdownlint-cli and other doc tooling.
+
+      # --------------------------------------------------------
+      # Step 4: Install markdownlint-cli
+      # --------------------------------------------------------
+      - name: Install markdownlint-cli
+        run: npm install -g markdownlint-cli
+        # markdownlint-cli enforces consistent Markdown formatting.
+
+      # --------------------------------------------------------
+      # Step 5: Run markdown linting
+      # --------------------------------------------------------
+      - name: Run markdownlint
+        run: markdownlint "**/*.md" --ignore node_modules
+        # Lints all Markdown files in the repo, ignoring node_modules.
+
+      # --------------------------------------------------------
+      # Step 6: Validate README.md presence
+      # --------------------------------------------------------
+      - name: Check README.md exists
+        run: |
+          if [ ! -f README.md ]; then
+            echo "❌ README.md is missing!"
+            exit 1
+          else
+            echo "✅ README.md found."
+          fi
+
+      # --------------------------------------------------------
+      # Step 7: Validate CHANGELOG.md presence
+      # --------------------------------------------------------
+      - name: Check CHANGELOG.md exists
+        run: |
+          if [ ! -f CHANGELOG.md ]; then
+            echo "❌ CHANGELOG.md is missing!"
+            exit 1
+          else
+            echo "✅ CHANGELOG.md found."
+          fi
+
+      # --------------------------------------------------------
+      # Step 8: Run Pester tests for docs (optional)
+      # --------------------------------------------------------
+      - name: Run Pester tests
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -Force -Scope CurrentUser
+          Import-Module Pester
+          # Run any Pester tests that validate docs (e.g., README references, folder diagrams)
+          if (Test-Path "Scripts\Tests\Test-Docs.Tests.ps1") {
+            Invoke-Pester -Path Scripts\Tests\Test-Docs.Tests.ps1 -Output Detailed -EnableExit
+          } else {
+            Write-Host "ℹ️ No doc-specific Pester tests found."

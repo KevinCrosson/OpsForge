@@ -1,0 +1,51 @@
+# ------------------------------------------------------------
+# Workflow Name
+# ------------------------------------------------------------
+# This is the name that will appear in GitHub Actions UI.
+name: Hygiene Enforcement
+
+# ------------------------------------------------------------
+# Trigger Conditions
+# ------------------------------------------------------------
+# Defines when this workflow should run.
+on:
+  push:                # Run on every push to the repo
+    branches: [ main ] # Limit to pushes on the main branch
+  pull_request:        # Run on every pull request targeting main
+    branches: [ main ]
+
+# ------------------------------------------------------------
+# Jobs Section
+# ------------------------------------------------------------
+jobs:
+  hygiene-tests:       # Job name (appears in GitHub Actions UI)
+    runs-on: windows-latest   # Use Windows runner for PowerShell compatibility
+
+    steps:
+      # --------------------------------------------------------
+      # Step 1: Checkout repository
+      # --------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        # This pulls down your repo code so the workflow can access scripts.
+
+      # --------------------------------------------------------
+      # Step 2: Install Pester
+      # --------------------------------------------------------
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          # Install the latest Pester module into the runner environment
+          Install-Module -Name Pester -Force -Scope CurrentUser
+          Import-Module Pester
+
+      # --------------------------------------------------------
+      # Step 3: Run hygiene tests
+      # --------------------------------------------------------
+      - name: Run Pester tests
+        shell: pwsh
+        run: |
+          # Invoke Pester on your hygiene test suite
+          # -Output Detailed gives verbose test results
+          # -EnableExit ensures CI fails if any test fails
+          Invoke-Pester -Path Scripts\Tests\Test-Hygiene.Tests.ps1 -Output Detailed -EnableExit

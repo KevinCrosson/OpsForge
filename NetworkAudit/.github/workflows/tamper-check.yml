@@ -1,0 +1,70 @@
+# ---------------------------------------------------------
+# GitHub Actions Workflow: tamper-check.yml
+# Purpose:
+#   Run the DeepForensics parser (Parse-DVRLogs.ps1) automatically
+#   on new DVR/NVR logs or parser changes, then publish JSON + hash
+#   artifacts for audit and chain-of-custody verification.
+# ---------------------------------------------------------
+
+name: DVR Tamper & Audit Check
+
+# ---------------------------------------------------------
+# Trigger conditions:
+# - Runs when new sample logs are committed (Tests/*.txt)
+# - Runs when parser scripts change (DeepForensics/**/*.ps1)
+# - Can also be triggered manually via workflow_dispatch
+# ---------------------------------------------------------
+on:
+  push:
+    paths:
+      - 'DeepForensics/Tests/*.txt'
+      - 'DeepForensics/**/*.ps1'
+  workflow_dispatch:
+
+jobs:
+  parse-dvr-logs:
+    # -----------------------------------------------------
+    # Use a Windows runner since the parser is PowerShell-native
+    # -----------------------------------------------------
+    runs-on: windows-latest
+
+    steps:
+      # -----------------------------------------------------
+      # Step 1: Checkout repository
+      # -----------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------
+      # Step 2: Ensure PowerShell Core is available
+      # (Windows runners already include pwsh, but this step
+      # makes it explicit for contributors.)
+      # -----------------------------------------------------
+      - name: Setup PowerShell
+        shell: pwsh
+        run: |
+          Write-Host "PowerShell version:" $PSVersionTable.PSVersion
+
+      # -----------------------------------------------------
+      # Step 3: Run the parser against sample logs
+      # - Uses Tests/SampleLogs.txt as input
+      # - Produces DVR_Audit.json + DVR_Audit.hash
+      # -----------------------------------------------------
+      - name: Run Parse-DVRLogs.ps1
+        shell: pwsh
+        run: |
+          $LogPath = "DeepForensics\Tests\SampleLogs.txt"
+          .\DeepForensics\Parse-DVRLogs.ps1 -LogPath $LogPath
+
+      # -----------------------------------------------------
+      # Step 4: Upload JSON + Hash artifacts
+      # - Artifacts are downloadable from the Actions run
+      # - Preserves chain-of-custody integrity in CI/CD
+      # -----------------------------------------------------
+      - name: Upload audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: DVR-Audit-Results
+          path: |
+            DeepForensics\Tests\DVR_Audit.json
+            DeepForensics\Tests\DVR_Audit.hash

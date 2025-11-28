@@ -1,0 +1,30 @@
+# Ignore PowerShell-generated logs and temp files
+*.log
+*.tmp
+
+# Ignore compiled or cached files
+*.ps1xml
+*.psd1
+*.pdb
+
+# Ignore secrets and encrypted environment files
+Secrets/
+.env*
+*.enc
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE/editor folders
+.vscode/
+.idea/
+
+# Ignore backup files
+*.bak
+*.old
+
+# Ignore node/python artifacts if present
+node_modules/
+__pycache__/
+*.pyc

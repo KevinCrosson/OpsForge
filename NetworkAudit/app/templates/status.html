@@ -1,0 +1,186 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NetworkAudit Status Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      color: #333;
+    }
+    .card {
+      border: 1px solid #ccc;
+      background-color: #fff;
+      padding: 15px;
+      margin-bottom: 25px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    select, button {
+      margin-right: 10px;
+      padding: 5px 10px;
+    }
+    #lastUpdated {
+      font-style: italic;
+      color: gray;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🔷 Dashboard Title -->
+  <h1>📊 NetworkAudit Status Dashboard</h1>
+
+  <!-- 🔍 Active Connections Widget -->
+  <div class="card">
+    <h3>🔍 Active Connections</h3>
+
+    <!-- Trust-Level Filter -->
+    <label for="trustFilter">Trust:</label>
+    <select id="trustFilter" onchange="applyConnectionFilters()">
+      <option value="All">All</option>
+      <option value="Local">Local</option>
+      <option value="Known">Known</option>
+      <option value="Suspicious">Suspicious</option>
+    </select>
+
+    <!-- Anomaly Filter -->
+    <label for="anomalyFilter">Show:</label>
+    <select id="anomalyFilter" onchange="applyConnectionFilters()">
+      <option value="All">All</option>
+      <option value="ReverseMismatch">Reverse DNS Failures</option>
+    </select>
+
+    <!-- Refresh Button -->
+    <button onclick="loadConnections()">Refresh</button>
+
+    <!-- Timestamp Banner -->
+    <p id="lastUpdated"></p>
+
+    <!-- Connections Table -->
+    <table id="connectionsTable">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Remote IP</th>
+          <th>Remote Port</th>
+          <th>Hostname</th>
+          <th>Trust Level</th>
+          <th>Reverse DNS Match</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- 📋 Dispatcher Log Summary Widget -->
+  <div class="card">
+    <h3>📋 Dispatcher Log Summary</h3>
+    <button onclick="loadDispatcherSummary()">Refresh</button>
+    <table id="dispatcherTable">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Status</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- 🧠 JavaScript Logic -->
+  <script>
+    // Load and display active TCP connections
+    function loadConnections() {
+      fetch('/api/connections')
+        .then(response => response.json())
+        .then(data => {
+          const tbody = document.querySelector('#connectionsTable tbody');
+          tbody.innerHTML = '';
+          data.forEach(conn => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${conn.Timestamp}</td>
+              <td>${conn.RemoteIP}</td>
+              <td>${conn.RemotePort}</td>
+              <td>${conn.Hostname}</td>
+              <td>${conn.TrustLevel}</td>
+              <td>${conn.ReverseDNSMatch}</td>
+            `;
+            tbody.appendChild(row);
+          });
+          document.getElementById('lastUpdated').textContent =
+            "Last updated: " + new Date().toLocaleString();
+          applyConnectionFilters();
+        })
+        .catch(err => console.error('Failed to load connections:', err));
+    }
+
+    // Apply trust-level and anomaly filters
+    function applyConnectionFilters() {
+      const trustFilter = document.getElementById('trustFilter').value;
+      const anomalyFilter = document.getElementById('anomalyFilter').value;
+      const rows = document.querySelectorAll('#connectionsTable tbody tr');
+
+      rows.forEach(row => {
+        const trust = row.cells[4].textContent;
+        const reverseMatch = row.cells[5].textContent;
+        const trustMatch = (trustFilter === "All" || trust === trustFilter);
+        const anomalyMatch = (
+          anomalyFilter === "All" ||
+          (anomalyFilter === "ReverseMismatch" && reverseMatch === "False")
+        );
+        row.style.display = (trustMatch && anomalyMatch) ? "" : "none";
+      });
+    }
+
+    // Load and display dispatcher log summary
+    function loadDispatcherSummary() {
+      fetch('/api/dispatcher-summary')
+        .then(response => response.json())
+        .then(data => {
+          const tbody = document.querySelector('#dispatcherTable tbody');
+          tbody.innerHTML = '';
+          data.forEach(entry => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${entry.Timestamp}</td>
+              <td>${entry.Status}</td>
+              <td>${entry.Message}</td>
+            `;
+            row.style.color = entry.Status === "Error" ? "red" :
+                              entry.Status === "Missing" ? "orange" :
+                              entry.Status === "ReverseMismatch" ? "purple" :
+                              entry.Status === "Success" ? "green" : "black";
+            tbody.appendChild(row);
+          });
+        })
+        .catch(err => console.error('Failed to load dispatcher summary:', err));
+    }
+
+    // Initial load
+    loadConnections();
+    loadDispatcherSummary();
+  </script>
+
+</body>
+</html>

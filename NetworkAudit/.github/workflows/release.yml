@@ -1,0 +1,64 @@
+# ------------------------------------------------------------
+# Workflow Name
+# ------------------------------------------------------------
+# This is the name that will appear in GitHub Actions UI.
+name: Release
+
+# ------------------------------------------------------------
+# Trigger Conditions
+# ------------------------------------------------------------
+# Defines when this workflow should run.
+on:
+  push:
+    tags:
+      - 'v*.*.*'   # Run only when a version tag is pushed (e.g., v1.0.1)
+
+# ------------------------------------------------------------
+# Jobs Section
+# ------------------------------------------------------------
+jobs:
+  release:
+    runs-on: windows-latest   # ⚠️ Use Windows runner for PowerShell scripts
+
+    steps:
+      # --------------------------------------------------------
+      # Step 1: Checkout repository
+      # --------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        # This pulls down your repo code so the workflow can access scripts and docs.
+
+      # --------------------------------------------------------
+      # Step 2: Run documentation bundler
+      # --------------------------------------------------------
+      - name: Run documentation bundler
+        shell: pwsh
+        run: Scripts/Dispatchers/Bundle-Docs.ps1
+        # Executes your dispatcher script to regenerate README.md,
+        # update CHANGELOG.md, bump VERSION, and copy LICENSE.
+
+      # --------------------------------------------------------
+      # Step 3: Upload bundled docs as artifact
+      # --------------------------------------------------------
+      - name: Upload bundled docs
+        uses: actions/upload-artifact@v3
+        with:
+          name: docs
+          path: Docs/
+        # Saves the Docs folder as a downloadable artifact in GitHub Actions.
+
+      # --------------------------------------------------------
+      # Step 4: Create GitHub Release
+      # --------------------------------------------------------
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            README.md
+            CHANGELOG.md
+            VERSION
+            LICENSE
+            Docs/**
+        # Publishes a GitHub Release with bundled documentation attached.
+        # The release will be tied to the pushed tag (e.g., v1.0.1).
+

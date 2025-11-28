@@ -1,0 +1,54 @@
+# ------------------------------------------------------------
+# GitHub Actions Workflow: Symbol Hygiene Tests
+# ------------------------------------------------------------
+# PURPOSE:
+#   Runs Pester tests against your PowerShell scripts to ensure
+#   corrupted symbols are detected and repaired consistently.
+#   Uses the reusable SymbolHygiene.Tests module.
+#
+# TRIGGERS:
+#   - On every push to the main branch
+#   - On every pull request targeting main
+# ------------------------------------------------------------
+
+name: Symbol Hygiene Tests
+
+on:
+  push:
+    branches: [ main ]        # Run when code is pushed to main
+  pull_request:
+    branches: [ main ]        # Run when a PR targets main
+
+jobs:
+  test:
+    runs-on: windows-latest   # Use Windows runner (matches your local dev environment)
+
+    steps:
+      # Step 1: Checkout your repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install Pester (PowerShell testing framework)
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          # Install Pester into the current user scope
+          Install-Module Pester -Scope CurrentUser -Force -SkipPublisherCheck
+
+      # Step 3: Configure PSModulePath to include your shared modules folder
+      - name: Configure PSModulePath
+        shell: pwsh
+        run: |
+          # Append C:\PSModules to PSModulePath so SymbolHygiene.Tests is discoverable
+          $env:PSModulePath += ";C:\PSModules"
+          Write-Host "PSModulePath: $env:PSModulePath"
+
+      # Step 4: Import SymbolHygiene.Tests and run Pester tests
+      - name: Run Pester tests
+        shell: pwsh
+        run: |
+          # Import your reusable hygiene module
+          Import-Module SymbolHygiene.Tests -ErrorAction Stop
+
+          # Run all Pester tests under Scripts\Tests
+          Invoke-Pester -Path .\Scripts\Tests -Output Detailed

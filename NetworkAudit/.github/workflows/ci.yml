@@ -1,0 +1,69 @@
+name: CI Pipeline
+
+# ------------------------------------------------------------
+# Trigger: Run this workflow on every push and pull request
+# ------------------------------------------------------------
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# ------------------------------------------------------------
+# Jobs: Matrix split into Validation and Repair Tests
+# ------------------------------------------------------------
+jobs:
+  validation:
+    name: Validation
+    runs-on: windows-latest   # Windows runner for PowerShell scripts
+
+    steps:
+      # Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup PowerShell
+      - name: Setup PowerShell
+        shell: pwsh
+        run: |
+          Write-Host "PowerShell version:"
+          $PSVersionTable.PSVersion
+
+      # Step 3: Validate SymbolMap.json
+      - name: Validate SymbolMap
+        shell: pwsh
+        run: |
+          Write-Host "=== Validating SymbolMap.json ==="
+          .\Scripts\Validate\Test-SymbolMap.ps1 -Verbose
+
+      # Step 4: Dry-run Repair-CorruptedSymbols.ps1
+      - name: Dry-run symbol repair
+        shell: pwsh
+        run: |
+          Write-Host "=== Running Repair-CorruptedSymbols.ps1 in Dry-Run mode ==="
+          .\Scripts\Maintenance\Repair-CorruptedSymbols.ps1 -DryRun -Verbose
+
+      # Step 5: Upload logs
+      - name: Upload SymbolFix logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: SymbolFixLogs
+          path: Scripts/Maintenance/Logs/SymbolFix.log
+
+  repair-tests:
+    name: Repair Tests
+    runs-on: windows-latest
+    needs: validation   # Run only after Validation job succeeds
+
+    steps:
+      # Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Run all Pester tests in Scripts\Tests
+      - name: Run Pester tests
+        shell: pwsh
+        run: |
+          Write-Host "=== Running all Pester tests in Scripts\Tests ==="
+          Invoke-Pester -Path Scripts\Tests -Output Detailed -EnableExit
+          Write-Host "=== Pester tests complete ==="
